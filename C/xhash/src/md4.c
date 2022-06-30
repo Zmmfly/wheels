@@ -1,45 +1,9 @@
 #include "xhash/md4.h"
-#include <stdio.h>
-
-#define S11 3
-#define S12 7
-#define S13 11
-#define S14 19
-#define S21 3
-#define S22 5
-#define S23 9
-#define S24 13
-#define S31 3
-#define S32 9
-#define S33 11
-#define S34 15
 
 #define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
 #define G(x, y, z) (((x) & (y)) | ((x) & (z)) | ((y) & (z)))
 #define H(x, y, z) ((x) ^ (y) ^ (z))
 #define lshift(x, n) ((((x) << (n)) | ((x) >> (32-(n)))) & 0xffffffff)
-
-// static uint32_t F(uint32_t x, uint32_t y, uint32_t z)
-// {
-//     return (x & y) | ((~x) & z);
-// }
-
-// static uint32_t G(uint32_t x, uint32_t y, uint32_t z)
-// {
-//     return (x & y) | (x & z) | (y & z);
-// }
-
-// static uint32_t H(uint32_t x, uint32_t y, uint32_t z)
-// {
-//     return x ^ y ^ z;
-// }
-
-// static uint32_t lshift(uint32_t x, uint32_t n)
-// {
-//     x &= 0xffffffff;
-//     return ( ((x<<n)&0xffffffff) | (x>>(32-n)) );
-// }
-
 
 #define FF(a, b, c, d, x, s) { \
     (a) += F ((b), (c), (d)) + (x); \
@@ -86,17 +50,6 @@ static int md4_ctx_reset(md4_context *ctx)
 {
     if (ctx == NULL) return XH_ENULL;
 
-    // if (xhash_is_little()) {
-    //     ctx->digest[0] = 0x67452301;
-    //     ctx->digest[1] = 0xefcdab89;
-    //     ctx->digest[2] = 0x98badcfe;
-    //     ctx->digest[3] = 0x10325476;
-    // } else {
-    //     ctx->digest[0] = 0x01234567;
-    //     ctx->digest[1] = 0x89abcdef;
-    //     ctx->digest[2] = 0xfedcba98;
-    //     ctx->digest[3] = 0x76543210;
-    // }
     ctx->digest[0] = 0x67452301;
     ctx->digest[1] = 0xefcdab89;
     ctx->digest[2] = 0x98badcfe;
@@ -118,30 +71,11 @@ static int md4_calc(md4_context *ctx)
 
     uint32_t *x = ctx->u32;
 
-    printf("calc begin:\n");
-    printf("ba: %08x\n", a);
-    printf("bb: %08x\n", b);
-    printf("bc: %08x\n", c);
-    printf("bd: %08x\n", d);
-
     if (!xhash_is_little()) {
-        printf("big endian, swap buffer\n");
         for (uint8_t i=0; i<16; i++)
         {
             x[i] = xhash_order_swap32(x[i]);
         }
-    }
-
-    printf("calc buffer, u8:\n");
-    for (size_t i=0; i<64; i++) {
-        printf("%02x", ctx->buf[i]);
-        printf("%s", ((i+1) % 16) == 0 ? "\n" : " " );
-    }
-
-    printf("calc buffer, u32:\n");
-    for (size_t i=0; i<16; i++) {
-        printf("%08x", ctx->u32[i]);
-        printf("%s", ((i+1) % 4) == 0 ? "\n" : " " );
     }
 
     //Round 1
@@ -198,12 +132,6 @@ static int md4_calc(md4_context *ctx)
     HH(c, d, a, b, x[7],  11);
     HH(b, c, d, a, x[15], 15);
 
-    printf("calc end:\n");
-    printf("ea: %08x\n", a);
-    printf("eb: %08x\n", b);
-    printf("ec: %08x\n", c);
-    printf("ed: %08x\n", d);
-
     ctx->digest[0] += a;
     ctx->digest[1] += b;
     ctx->digest[2] += c;
@@ -248,24 +176,6 @@ static int md4_final(md4_context *ctx, void *ptr, size_t len, size_t *out)
     }
     md4_update(ctx, un64.u8, 8);
     
-    printf("dig u8:\n");
-    for (size_t i=0; i<16; i++) {
-        printf("%02x", ctx->digu8[i]);
-        printf("%s", ((i+1) % 4) == 0 ? "\n" : " " );
-    }
-
-    printf("dig u32:\n");
-    printf("%08x %08x %08x %08x\n",
-        ctx->digest[0],
-        ctx->digest[1],
-        ctx->digest[2],
-        ctx->digest[3]
-    );
-
-    // if (xhash_is_little()) {
-    //     for (uint8_t i=0; i<4; i++) ctx->u32[i] = xhash_order_swap32(ctx->u32[i]);
-    // }
-    // for (uint8_t i=0; i<4; i++) ctx->u32[i] = xhash_order_swap32(ctx->u32[i]);
     if (!xhash_is_little()) {
         ctx->digest[0] = xhash_order_swap32(ctx->digest[0]);
         ctx->digest[1] = xhash_order_swap32(ctx->digest[1]);
